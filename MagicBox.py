@@ -3,6 +3,7 @@ from time import sleep
 import serial
 from threading import Thread
 
+from utils.start_software import start_software
 from utils.volume import set_volume
 
 
@@ -58,9 +59,9 @@ class MagicBox:
     def get_switch_state(self, switch):
         if switch == MagicBox.LEFT_SWITCH:
             if self._raw_pins['D11'] == 1:
-                return MagicBox.CENTER
-            elif self._raw_pins['D12'] == 1:
                 return MagicBox.DOWN
+            elif self._raw_pins['D12'] == 1:
+                return MagicBox.CENTER
         elif switch == MagicBox.RIGHT_SWITCH:
             if self._raw_pins['D0'] == 1:
                 return MagicBox.UP
@@ -82,11 +83,49 @@ class MagicBox:
 
 def main():
     box = MagicBox()
+    left_btn = True
+    center_btn = True
+    right_btn = True
     while True:
         left = box.wheel_in_percentage(MagicBox.CENTER_WHEEL_INNER)
         right = box.wheel_in_percentage(MagicBox.CENTER_WHEEL_OUTER)
         set_volume(left, right)
-        sleep(0.5)
+        if box.get_switch_state(MagicBox.LEFT_SWITCH) == MagicBox.DOWN:
+            right_switch = box.get_switch_state(MagicBox.RIGHT_SWITCH)
+            if box.is_pressed(MagicBox.LEFT_BUTTON):
+                if left_btn:
+                    if right_switch == MagicBox.UP:
+                        start_software('spotify')
+                    elif right_switch == MagicBox.CENTER:
+                        print('left center')
+                    elif right_switch == MagicBox.DOWN:
+                        print('left down')
+                left_btn = False
+            else:
+                left_btn = True
+            if box.is_pressed(MagicBox.CENTER_BUTTON):
+                if center_btn:
+                    if right_switch == MagicBox.UP:
+                        print('center up')
+                    elif right_switch == MagicBox.CENTER:
+                        print('center center')
+                    elif right_switch == MagicBox.DOWN:
+                        print('center down')
+                center_btn = False
+            else:
+                center_btn = True
+            if box.is_pressed(MagicBox.RIGHT_BUTTON):
+                if right_btn:
+                    if right_switch == MagicBox.UP:
+                        print('right up')
+                    elif right_switch == MagicBox.CENTER:
+                        print('right center')
+                    elif right_switch == MagicBox.DOWN:
+                        print('right down')
+                right_btn = False
+            else:
+                right_btn = True
+        sleep(0.01)
 
 
 if __name__ == '__main__':
